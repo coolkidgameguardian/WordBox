@@ -1,9 +1,8 @@
 --[=[
-    WORD SEARCH ENGINE v4 (Smart Search)
-    - Default: "Starts With" (Prefix) search.
-    - Space + Text: "Contains" (Substring) search.
-    - Underscore (_): "Hangman" (Wildcard) search.
-    - Highlights matching letters in RED.
+    WORD SEARCH ENGINE v5 (ANTI-LAG & OPTIMIZED)
+    - Batched Button Creation (Prevents freezing when opening large lists).
+    - Batched Search (Prevents lag when typing).
+    - Smart Debounce (Cancels old searches if you type fast).
 ]=]
 
 local UserInputService = game:GetService("UserInputService")
@@ -12,16 +11,20 @@ local RunService = game:GetService("RunService")
 local Players = game:GetService("Players")
 local LocalPlayer = Players.LocalPlayer
 
--- Instances: 26 | Scripts: 0 | Modules: 0 | Tags: 0
+-- Global Configuration for Performance
+local BATCH_SIZE_CREATION = 30 -- How many buttons to create per frame (Lower = Less Lag, Slower Load)
+local BATCH_SIZE_SEARCH = 200  -- How many items to search per frame
+
+-- Instances
 local LMG2L = {};
 
--- PlayerGui.ScreenGui
+-- GUI Setup
 LMG2L["ScreenGui_1"] = Instance.new("ScreenGui", game:GetService("Players").LocalPlayer:WaitForChild("PlayerGui"));
 LMG2L["ScreenGui_1"]["ZIndexBehavior"] = Enum.ZIndexBehavior.Sibling;
 LMG2L["ScreenGui_1"]["DisplayOrder"] = 9999;
 LMG2L["ScreenGui_1"]["ResetOnSpawn"] = false;
 
--- PlayerGui.ScreenGui.Base
+-- Base Frame
 LMG2L["Base_2"] = Instance.new("Frame", LMG2L["ScreenGui_1"]);
 LMG2L["Base_2"]["BorderSizePixel"] = 0;
 LMG2L["Base_2"]["BackgroundColor3"] = Color3.fromRGB(142, 255, 0);
@@ -29,11 +32,10 @@ LMG2L["Base_2"]["Size"] = UDim2.new(0.37853, 0, 0.54644, 0);
 LMG2L["Base_2"]["Position"] = UDim2.new(0.2594, 0, 0.12193, 0);
 LMG2L["Base_2"]["Name"] = [[Base]];
 
--- PlayerGui.ScreenGui.Base.UICorner
 LMG2L["UICorner_3"] = Instance.new("UICorner", LMG2L["Base_2"]);
 LMG2L["UICorner_3"]["CornerRadius"] = UDim.new(0, 10);
 
--- PlayerGui.ScreenGui.Base.Minimize
+-- Minimize Button
 LMG2L["Minimize_4"] = Instance.new("Frame", LMG2L["Base_2"]);
 LMG2L["Minimize_4"]["BorderSizePixel"] = 0;
 LMG2L["Minimize_4"]["BackgroundColor3"] = Color3.fromRGB(142, 255, 0);
@@ -41,15 +43,12 @@ LMG2L["Minimize_4"]["Size"] = UDim2.new(0.11168, 0, 0.17355, 0);
 LMG2L["Minimize_4"]["Position"] = UDim2.new(0.88325, 0, -0.21488, 0);
 LMG2L["Minimize_4"]["Name"] = [[Minimize]];
 
--- PlayerGui.ScreenGui.Base.Minimize.UICorner
 LMG2L["UICorner_5"] = Instance.new("UICorner", LMG2L["Minimize_4"]);
 LMG2L["UICorner_5"]["CornerRadius"] = UDim.new(0, 10);
 
--- PlayerGui.ScreenGui.Base.Minimize.UIStroke
 LMG2L["UIStroke_6"] = Instance.new("UIStroke", LMG2L["Minimize_4"]);
 LMG2L["UIStroke_6"]["Thickness"] = 4;
 
--- PlayerGui.ScreenGui.Base.Minimize.ImageLabel
 LMG2L["ImageLabel_7"] = Instance.new("ImageLabel", LMG2L["Minimize_4"]);
 LMG2L["ImageLabel_7"]["BorderSizePixel"] = 0;
 LMG2L["ImageLabel_7"]["ScaleType"] = Enum.ScaleType.Fit;
@@ -60,7 +59,7 @@ LMG2L["ImageLabel_7"]["Size"] = UDim2.new(5.5, 0, 5.80952, 0);
 LMG2L["ImageLabel_7"]["BackgroundTransparency"] = 1;
 LMG2L["ImageLabel_7"]["Position"] = UDim2.new(-2.36364, 0, -2.33333, 0);
 
--- PlayerGui.ScreenGui.Base.Modules
+-- Modules Frame
 LMG2L["Modules_8"] = Instance.new("Frame", LMG2L["Base_2"]);
 LMG2L["Modules_8"]["BorderSizePixel"] = 0;
 LMG2L["Modules_8"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
@@ -69,11 +68,10 @@ LMG2L["Modules_8"]["Position"] = UDim2.new(0.28934, 0, 0.02479, 0);
 LMG2L["Modules_8"]["Name"] = [[Modules]];
 LMG2L["Modules_8"]["BackgroundTransparency"] = 1;
 
--- PlayerGui.ScreenGui.Base.Modules.UICorner
 LMG2L["UICorner_9"] = Instance.new("UICorner", LMG2L["Modules_8"]);
 LMG2L["UICorner_9"]["CornerRadius"] = UDim.new(0, 10);
 
--- PlayerGui.ScreenGui.Base.Modules.ScrollingFrame
+-- Module Scroll
 LMG2L["ScrollingFrame_a"] = Instance.new("ScrollingFrame", LMG2L["Modules_8"]);
 LMG2L["ScrollingFrame_a"]["BorderSizePixel"] = 0;
 LMG2L["ScrollingFrame_a"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
@@ -93,11 +91,10 @@ ModulesPadding.PaddingBottom = UDim.new(0, 10)
 ModulesPadding.PaddingLeft = UDim.new(0, 5)
 ModulesPadding.PaddingRight = UDim.new(0, 5)
 
--- PlayerGui.ScreenGui.Base.Modules.ScrollingFrame.UICorner
 LMG2L["UICorner_b"] = Instance.new("UICorner", LMG2L["ScrollingFrame_a"]);
 LMG2L["UICorner_b"]["CornerRadius"] = UDim.new(0, 10);
 
--- PlayerGui.ScreenGui.Base.Modules.Search
+-- Search Bar
 LMG2L["Search_c"] = Instance.new("Frame", LMG2L["Modules_8"]);
 LMG2L["Search_c"]["BorderSizePixel"] = 0;
 LMG2L["Search_c"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
@@ -115,19 +112,16 @@ SearchBox.TextColor3 = Color3.fromRGB(0, 0, 0)
 SearchBox.TextScaled = true
 SearchBox.Font = Enum.Font.GothamBold
 
--- PlayerGui.ScreenGui.Base.Modules.Search.UICorner
 LMG2L["UICorner_d"] = Instance.new("UICorner", LMG2L["Search_c"]);
 LMG2L["UICorner_d"]["CornerRadius"] = UDim.new(0, 10);
 
--- PlayerGui.ScreenGui.Base.Modules.Search.UIStroke
 LMG2L["UIStroke_e"] = Instance.new("UIStroke", LMG2L["Search_c"]);
 LMG2L["UIStroke_e"]["Thickness"] = 4;
 
--- PlayerGui.ScreenGui.Base.Modules.UIStroke
 LMG2L["UIStroke_f"] = Instance.new("UIStroke", LMG2L["Modules_8"]);
 LMG2L["UIStroke_f"]["Thickness"] = 4;
 
--- PlayerGui.ScreenGui.Base.Category
+-- Category Frame
 LMG2L["Category_10"] = Instance.new("Frame", LMG2L["Base_2"]);
 LMG2L["Category_10"]["BorderSizePixel"] = 0;
 LMG2L["Category_10"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
@@ -136,11 +130,9 @@ LMG2L["Category_10"]["Position"] = UDim2.new(0.01523, 0, 0.02479, 0);
 LMG2L["Category_10"]["Name"] = [[Category]];
 LMG2L["Category_10"]["BackgroundTransparency"] = 1;
 
--- PlayerGui.ScreenGui.Base.Category.UICorner
 LMG2L["UICorner_11"] = Instance.new("UICorner", LMG2L["Category_10"]);
 LMG2L["UICorner_11"]["CornerRadius"] = UDim.new(0, 10);
 
--- PlayerGui.ScreenGui.Base.Category.ScrollingFrame
 LMG2L["ScrollingFrame_12"] = Instance.new("ScrollingFrame", LMG2L["Category_10"]);
 LMG2L["ScrollingFrame_12"]["BorderSizePixel"] = 0;
 LMG2L["ScrollingFrame_12"]["BackgroundColor3"] = Color3.fromRGB(255, 255, 255);
@@ -159,15 +151,13 @@ CategoryPadding.PaddingBottom = UDim.new(0, 2)
 CategoryPadding.PaddingLeft = UDim.new(0, 5)
 CategoryPadding.PaddingRight = UDim.new(0, 5)
 
--- PlayerGui.ScreenGui.Base.Category.ScrollingFrame.UICorner
 LMG2L["UICorner_13"] = Instance.new("UICorner", LMG2L["ScrollingFrame_12"]);
 LMG2L["UICorner_13"]["CornerRadius"] = UDim.new(0, 10);
 
--- PlayerGui.ScreenGui.Base.Category.UIStroke
 LMG2L["UIStroke_14"] = Instance.new("UIStroke", LMG2L["Category_10"]);
 LMG2L["UIStroke_14"]["Thickness"] = 4;
 
--- PlayerGui.ScreenGui.Base.Client Name
+-- Client Name Frame
 LMG2L["Client Name_15"] = Instance.new("Frame", LMG2L["Base_2"]);
 LMG2L["Client Name_15"]["BorderSizePixel"] = 0;
 LMG2L["Client Name_15"]["BackgroundColor3"] = Color3.fromRGB(142, 255, 0);
@@ -175,11 +165,9 @@ LMG2L["Client Name_15"]["Size"] = UDim2.new(0.5736, 0, 0.17355, 0);
 LMG2L["Client Name_15"]["Position"] = UDim2.new(-0.00508, 0, -0.21488, 0);
 LMG2L["Client Name_15"]["Name"] = [[Client Name]];
 
--- PlayerGui.ScreenGui.Base.Client Name.UICorner
 LMG2L["UICorner_16"] = Instance.new("UICorner", LMG2L["Client Name_15"]);
 LMG2L["UICorner_16"]["CornerRadius"] = UDim.new(0, 10);
 
--- PlayerGui.ScreenGui.Base.Client Name.ImageLabel
 LMG2L["ImageLabel_17"] = Instance.new("ImageLabel", LMG2L["Client Name_15"]);
 LMG2L["ImageLabel_17"]["BorderSizePixel"] = 0;
 LMG2L["ImageLabel_17"]["ScaleType"] = Enum.ScaleType.Fit;
@@ -190,20 +178,17 @@ LMG2L["ImageLabel_17"]["Size"] = UDim2.new(1.12389, 0, 1.7619, 0);
 LMG2L["ImageLabel_17"]["BackgroundTransparency"] = 1;
 LMG2L["ImageLabel_17"]["Position"] = UDim2.new(-0.0708, 0, -0.38095, 0);
 
--- PlayerGui.ScreenGui.Base.Client Name.UIStroke
 LMG2L["UIStroke_18"] = Instance.new("UIStroke", LMG2L["Client Name_15"]);
 LMG2L["UIStroke_18"]["Thickness"] = 4;
 
--- PlayerGui.ScreenGui.Base.UIStroke
 LMG2L["UIStroke_19"] = Instance.new("UIStroke", LMG2L["Base_2"]);
 LMG2L["UIStroke_19"]["Thickness"] = 4;
 
--- PlayerGui.ScreenGui.Base.UIAspectRatioConstraint
 LMG2L["UIAspectRatioConstraint_1a"] = Instance.new("UIAspectRatioConstraint", LMG2L["Base_2"]);
 LMG2L["UIAspectRatioConstraint_1a"]["AspectRatio"] = 1.6281;
 
 ----------------------------------------------------------------------------------
--- [[ INTERACTION LOGIC ]]
+-- [[ INTERACTION LOGIC (DRAG & SCROLL) ]]
 ----------------------------------------------------------------------------------
 
 local DragHandle = Instance.new("Frame")
@@ -277,11 +262,8 @@ local function MakeDraggableSmooth(Handle, ObjectToMove)
             dragToggle = true
             dragStart = input.Position
             startPos = ObjectToMove.Position
-            
             input.Changed:Connect(function()
-                if input.UserInputState == Enum.UserInputState.End then
-                    dragToggle = false
-                end
+                if input.UserInputState == Enum.UserInputState.End then dragToggle = false end
             end)
         end
     end)
@@ -293,9 +275,7 @@ local function MakeDraggableSmooth(Handle, ObjectToMove)
     end)
     
     UserInputService.InputChanged:Connect(function(input)
-        if input == dragInput and dragToggle then
-            updateInput(input)
-        end
+        if input == dragInput and dragToggle then updateInput(input) end
     end)
 end
 
@@ -304,41 +284,31 @@ MakeDraggableSmooth(OpenButton, OpenButton)
 
 local function updateScroll(frame, layout, padding)
     if not frame or not layout or not padding then return end
-    
     local h = layout.AbsoluteContentSize.Y + padding.PaddingTop.Offset + padding.PaddingBottom.Offset
     frame.CanvasSize = UDim2.new(0, 0, 0, h)
-    
     local max = h - (frame.AbsoluteWindowSize.Y)
     if max < 0 then max = 0 end
-    
     frame.CanvasPosition = Vector2.new(0, math.clamp(frame.CanvasPosition.Y, 0, max))
 end
 
-LMG2L["ScrollingFrame_a"]:GetPropertyChangedSignal("CanvasPosition"):Connect(function() 
-    updateScroll(LMG2L["ScrollingFrame_a"], ModulesLayout, ModulesPadding) 
-end)
-ModulesLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() 
-    updateScroll(LMG2L["ScrollingFrame_a"], ModulesLayout, ModulesPadding) 
-end)
+LMG2L["ScrollingFrame_a"]:GetPropertyChangedSignal("CanvasPosition"):Connect(function() updateScroll(LMG2L["ScrollingFrame_a"], ModulesLayout, ModulesPadding) end)
+ModulesLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() updateScroll(LMG2L["ScrollingFrame_a"], ModulesLayout, ModulesPadding) end)
+LMG2L["ScrollingFrame_12"]:GetPropertyChangedSignal("CanvasPosition"):Connect(function() updateScroll(LMG2L["ScrollingFrame_12"], CategoryLayout, CategoryPadding) end)
+CategoryLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() updateScroll(LMG2L["ScrollingFrame_12"], CategoryLayout, CategoryPadding) end)
 
-LMG2L["ScrollingFrame_12"]:GetPropertyChangedSignal("CanvasPosition"):Connect(function() 
-    updateScroll(LMG2L["ScrollingFrame_12"], CategoryLayout, CategoryPadding) 
-end)
-CategoryLayout:GetPropertyChangedSignal("AbsoluteContentSize"):Connect(function() 
-    updateScroll(LMG2L["ScrollingFrame_12"], CategoryLayout, CategoryPadding) 
-end)
+----------------------------------------------------------------------------------
+-- [[ OPTIMIZED SEARCH LOGIC ]]
+----------------------------------------------------------------------------------
 
-SearchBox.Focused:Connect(function()
-    SearchBox.PlaceholderText = ""
-end)
+SearchBox.Focused:Connect(function() SearchBox.PlaceholderText = "" end)
+SearchBox.FocusLost:Connect(function() if SearchBox.Text == "" then SearchBox.PlaceholderText = "Search..." end end)
 
-SearchBox.FocusLost:Connect(function()
-    if SearchBox.Text == "" then
-        SearchBox.PlaceholderText = "Search..."
-    end
-end)
+local CurrentSearchId = 0
 
 SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
+    CurrentSearchId = CurrentSearchId + 1 -- Invalidate old searches
+    local thisSearchId = CurrentSearchId
+    
     local RawInput = SearchBox.Text 
     local LowerInput = RawInput:lower()
     local ScrollingFrame = LMG2L["ScrollingFrame_a"]
@@ -347,75 +317,81 @@ SearchBox:GetPropertyChangedSignal("Text"):Connect(function()
 
     local isWildcard = string.find(LowerInput, "_") ~= nil
     local isSubstringMode = string.sub(LowerInput, 1, 1) == " "
-    
     local query = LowerInput
-    if isSubstringMode then
-        query = string.sub(LowerInput, 2)
-    end
+    if isSubstringMode then query = string.sub(LowerInput, 2) end
     
-    for _, item in pairs(ScrollingFrame:GetChildren()) do
-        if item:IsA("GuiObject") and item:FindFirstChild("Label") then
-            local rawWord = item.Name
-            local lowerWord = rawWord:lower()
-            local textLabel = item.Label
+    -- Run in background to not freeze UI
+    task.spawn(function()
+        local count = 0
+        local children = ScrollingFrame:GetChildren()
+        
+        for _, item in pairs(children) do
+            if thisSearchId ~= CurrentSearchId then return end -- Stop if new search started
             
-            if query == "" and not isWildcard then
-                textLabel.Text = rawWord
-                item.Visible = true
-            else
-                local matchFound = false
-                local highlightedText = rawWord
+            if item:IsA("GuiObject") and item:FindFirstChild("Label") then
+                count = count + 1
+                if count % BATCH_SIZE_SEARCH == 0 then task.wait() end -- Yield every X items
                 
-                if isWildcard then
-                    if #query == #lowerWord then
-                        local isMatch = true
-                        local builtString = ""
-                        for i = 1, #lowerWord do
-                            local inputChar = string.sub(query, i, i)
-                            local wordChar = string.sub(rawWord, i, i)
-                            if inputChar == "_" then
-                                builtString = builtString .. wordChar
-                            elseif inputChar == wordChar:lower() then
-                                builtString = builtString .. HIGHLIGHT_COLOR .. wordChar .. END_COLOR
-                            else
-                                isMatch = false
-                                break
+                local rawWord = item.Name
+                local lowerWord = rawWord:lower()
+                local textLabel = item.Label
+                
+                if query == "" and not isWildcard then
+                    textLabel.Text = rawWord
+                    item.Visible = true
+                else
+                    local matchFound = false
+                    local highlightedText = rawWord
+                    
+                    if isWildcard then
+                        if #query == #lowerWord then
+                            local isMatch = true
+                            local builtString = ""
+                            for i = 1, #lowerWord do
+                                local inputChar = string.sub(query, i, i)
+                                local wordChar = string.sub(rawWord, i, i)
+                                if inputChar == "_" then
+                                    builtString = builtString .. wordChar
+                                elseif inputChar == wordChar:lower() then
+                                    builtString = builtString .. HIGHLIGHT_COLOR .. wordChar .. END_COLOR
+                                else
+                                    isMatch = false
+                                    break
+                                end
+                            end
+                            if isMatch then
+                                matchFound = true
+                                highlightedText = builtString
                             end
                         end
-                        if isMatch then
+                    elseif isSubstringMode then
+                        local s, e = string.find(lowerWord, query, 1, true)
+                        if s then
                             matchFound = true
-                            highlightedText = builtString
+                            local pre = string.sub(rawWord, 1, s - 1)
+                            local mid = string.sub(rawWord, s, e)
+                            local post = string.sub(rawWord, e + 1)
+                            highlightedText = pre .. HIGHLIGHT_COLOR .. mid .. END_COLOR .. post
+                        end
+                    else
+                        if string.sub(lowerWord, 1, #query) == query then
+                            matchFound = true
+                            local pre = string.sub(rawWord, 1, #query)
+                            local post = string.sub(rawWord, #query + 1)
+                            highlightedText = HIGHLIGHT_COLOR .. pre .. END_COLOR .. post
                         end
                     end
-                elseif isSubstringMode then
-                    local s, e = string.find(lowerWord, query, 1, true)
-                    if s then
-                        matchFound = true
-                        local pre = string.sub(rawWord, 1, s - 1)
-                        local mid = string.sub(rawWord, s, e)
-                        local post = string.sub(rawWord, e + 1)
-                        highlightedText = pre .. HIGHLIGHT_COLOR .. mid .. END_COLOR .. post
+                    
+                    item.Visible = matchFound
+                    if matchFound then
+                        textLabel.RichText = true
+                        textLabel.Text = highlightedText
                     end
-                else
-                    if string.sub(lowerWord, 1, #query) == query then
-                        matchFound = true
-                        local pre = string.sub(rawWord, 1, #query)
-                        local post = string.sub(rawWord, #query + 1)
-                        highlightedText = HIGHLIGHT_COLOR .. pre .. END_COLOR .. post
-                    end
-                end
-                
-                if matchFound then
-                    item.Visible = true
-                    textLabel.RichText = true
-                    textLabel.Text = highlightedText
-                else
-                    item.Visible = false
                 end
             end
         end
-    end
-    updateScroll(LMG2L["ScrollingFrame_a"], ModulesLayout, ModulesPadding) 
+        updateScroll(LMG2L["ScrollingFrame_a"], ModulesLayout, ModulesPadding) 
+    end)
 end)
 
 local function MinimizeGui()
@@ -434,15 +410,18 @@ LMG2L["Minimize_4"].InputBegan:Connect(function(input)
     end
 end)
 
-OpenButton.MouseButton1Click:Connect(function()
-    OpenGui()
-end)
+OpenButton.MouseButton1Click:Connect(function() OpenGui() end)
+
+----------------------------------------------------------------------------------
+-- [[ LIBRARY LOGIC ]]
+----------------------------------------------------------------------------------
 
 local CategoryContainer = LMG2L["ScrollingFrame_12"] 
 local ModuleContainer = LMG2L["ScrollingFrame_a"]  
 local ActiveCategoryButton = nil
 local Library = {}
 
+-- Cached function for efficiency
 local function CreateWordButton(wordText)
     local btn = Instance.new("TextButton")
     btn.Name = wordText
@@ -473,11 +452,8 @@ local function CreateWordButton(wordText)
         task.wait(0.1)
         TweenService:Create(title, TweenInfo.new(0.5), {TextColor3 = Color3.fromRGB(255, 255, 255)}):Play()
         print("Selected Word: " .. wordText)
-        if setclipboard then
-            setclipboard(wordText)
-        end
+        if setclipboard then setclipboard(wordText) end
     end)
-    updateScroll(ModuleContainer, ModulesLayout, ModulesPadding)
 end
 
 function Library:AddCategory(categoryName, wordsTable)
@@ -503,16 +479,21 @@ function Library:AddCategory(categoryName, wordsTable)
         ActiveCategoryButton = btn
         TweenService:Create(btn, TweenInfo.new(0.2), {TextColor3 = Color3.fromRGB(142, 255, 0), BackgroundTransparency = 0.9}):Play()
 
+        -- Fast Clear
         for _, child in pairs(ModuleContainer:GetChildren()) do
-            if child:IsA("TextButton") then
-                child:Destroy()
-            end
+            if child:IsA("TextButton") then child:Destroy() end
         end
 
-        for _, word in ipairs(wordsTable) do
-            CreateWordButton(word)
-        end
-        updateScroll(ModuleContainer, ModulesLayout, ModulesPadding)
+        -- Batched Creation (THE LAG FIX)
+        task.spawn(function()
+            local count = 0
+            for _, word in ipairs(wordsTable) do
+                CreateWordButton(word)
+                count = count + 1
+                if count % BATCH_SIZE_CREATION == 0 then task.wait() end -- Yields to prevent freezing
+            end
+            updateScroll(ModuleContainer, ModulesLayout, ModulesPadding)
+        end)
     end)
     updateScroll(CategoryContainer, CategoryLayout, CategoryPadding)
 end
